@@ -1,0 +1,226 @@
+# Analyzing plant phenology near the Santa Clara River
+
+## Background
+
+Phenology, referring to the timing of life events, plays a vital role in plants, encompassing processes like leaf growth, flowering, and leaf senescence. Plants adjust these events according to local climate conditions to ensure successful reproduction, while animal species often align their phenology with food availability. The ongoing climate shifts disrupt this synchronization, making alterations in phenology a crucial gauge of how ecosystems are adapting to climate change. Plant species employ diverse phenological strategies, including winter deciduous (shedding leaves in winter, regrowing in spring), drought deciduous (losing leaves in summer during water scarcity), and evergreen (maintaining leaves throughout the year).
+
+Plants use different strategies for growth and survival: riparian forests, grasslands, and chaparral shrublands
+
+## Goal
+
+To examine the phenology of these plant communities, we will utilize a time series of Landsat imagery along with polygons that identify the locations of study sites within each plant community.\
+
+## Dataset 
+
+Landsat Operational Land Imager (OLI sensor)\
+8 pre-processed scenes
+
+Study sites
+
+Each identified by plant type, with the column named "study_site."
+
+# Workflow
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE)
+```
+
+```{r include=TRUE, message=FALSE}
+library(terra)
+library(sf)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(here)
+library(tmap)
+library(cowplot)
+
+rm(list = ls())
+
+
+here::i_am("phenology.Rmd")
+```
+
+### NDVI function for nir and red 
+
+This index is derived by calculating the difference in reflectance between the near-infrared and red bands and then normalizing the result by their sum.
+
+```{r ndvi-function}
+ndvi_fun = function(nir, red){
+  (nir - red) / (nir + red)
+}
+```
+
+## Sampling one of the scene
+
+### computing NDVI for a single scene
+
+We have 8 scenes collected by the Landsat OLI sensor on 8 different days throughout the year. Let's start by loading in the first scene collected on June 12, 2018
+
+```{r}
+landsat_20180612 <-rast(here("data", "landsat_20180612.tif"))
+
+landsat_20180612
+```
+
+## match the spectral bands
+
+```{r}
+names(landsat_20180612) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+
+landsat_20180612
+```
+
+### take NIR and Red bands 
+
+Utilize the NDVI function and calculate this using the lapp() method.
+
+```{r}
+ndvi_20180612 <- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
+
+ndvi_20180612
+```
+
+### computing NDVI for all scences
+
+Now we want to repeat the same operations for all 8 scenes. Below is a possible solution, but it's pretty clunky.
+
+#### load in each layer
+
+```{r }
+landsat_20180612 <-rast(here("data", "landsat_20180612.tif"))
+landsat_20180815 <- rast(here( "data", "landsat_20180815.tif"))
+landsat_20181018 <- rast(here("data", "landsat_20181018.tif"))
+landsat_20181103 <- rast(here("data", "landsat_20181103.tif"))
+landsat_20190122 <- rast(here("data",  "landsat_20190122.tif"))
+landsat_20190223 <- rast(here("data", "landsat_20190223.tif"))
+landsat_20190412 <- rast(here("data", "landsat_20190412.tif"))
+landsat_20190701 <- rast(here("data", "landsat_20190701.tif"))
+```
+
+#### rename each layer
+
+```{r include=TRUE}
+names(landsat_20180612) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20180815) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20181018) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20181103) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20190122) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20190223) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20190412) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+names(landsat_20190701) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+```
+
+#### compute NDVI for each layer
+
+```{r include=TRUE}
+ndvi_20180612 <- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20180815 <- lapp(landsat_20180815[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20181018 <- lapp(landsat_20181018[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20181103 <- lapp(landsat_20181103[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20190122 <- lapp(landsat_20190122[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20190223 <- lapp(landsat_20190223[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20190412 <- lapp(landsat_20190412[[c(4, 3)]], fun = ndvi_fun)
+ndvi_20190701 <- lapp(landsat_20190701[[c(4, 3)]], fun = ndvi_fun)
+```
+
+### computing NDVI for all scenes 
+
+Outline our function by first specifying the operations we aim to perform, which involves creating a list of files/scenes. This list will enable our function to compute NDVI for each scene, requiring us to locate the relevant files in our data folder. Subsequently, we'll update our function to operate seamlessly with the list of file names we generated.
+
+```{r}
+# bring data 
+files <- list.files(here("data"), pattern = "*.tif", full.names = TRUE)
+
+files 
+
+# now we're passing our function a number that will correspond to the index in the list of file names
+create_ndvi_layer <- function(i){
+  landsat <- rast(files[i])
+  names(landsat) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+  ndvi <- lapp(landsat[[c(4, 3)]], fun = ndvi_fun)
+}
+```
+
+Employ our function to generate an NDVI layer for each scene and then combine them into a unified raster stack.
+
+```{r}
+# create NDVI layer for each scene (day) and stack into a single rasterstack
+all_ndvi <- c(create_ndvi_layer(1),
+              create_ndvi_layer(2),
+              create_ndvi_layer(3),
+              create_ndvi_layer(4),
+              create_ndvi_layer(5),
+              create_ndvi_layer(6),
+              create_ndvi_layer(7),
+              create_ndvi_layer(8))
+
+# update layer names to match date
+names(all_ndvi) <- c("2018-06-12",
+                     "2018-08-15",
+                     "2018-10-18",
+                     "2018-11-03",
+                     "2019-01-22",
+                     "2019-02-23",
+                     "2019-04-12",
+                     "2019-07-01")
+```
+
+### Compare NDVI across vegetation communities
+
+Having calculated NDVI for each of our scenes (days), our objective is to compare variations in NDVI values across distinct vegetation communities.
+
+```{r include=TRUE}
+sites <- st_read(here("data","study_sites.shp"))
+
+sites
+
+# plot study sites on a single NDVI layer
+tm_shape(all_ndvi[[1]]) +
+  tm_raster() +
+  tm_shape(sites) +
+  tm_polygons()
+```
+
+In this step, we determine the average NDVI within each study site. The output of the extraction process is a data frame with rows corresponding to the study site dataset. To integrate these results, we bind them to the original dataset.
+
+```{r include=TRUE}
+sites_ndvi <- terra::extract(all_ndvi, sites, fun = "mean")
+
+sites_annotated <- cbind(sites, sites_ndvi)
+```
+
+#### clean results
+
+```{r include=TRUE}
+sites_clean <- sites_annotated %>%
+  st_drop_geometry() %>%
+  select(-ID) %>%
+  pivot_longer(!study_site) %>%
+  rename("NDVI" = value) %>%
+  mutate("year" = str_sub(name, 2, 5),
+         "month" = str_sub(name, 7, 8),
+         "day" = str_sub(name, -2, -1)) %>%
+  unite("date", 4:6, sep = "-") %>%
+  mutate("date" = lubridate::as_date(date))
+```
+
+#### plot results
+
+```{r include=TRUE}
+ggplot(sites_clean,
+       aes(x = date, y = NDVI,
+           group = study_site, col = study_site)) +
+  scale_color_manual(values = c("#EAAC8B", "#315C2B", "#315C2B", "#315C2B","#9EA93F")) +
+  geom_line() +
+  theme_minimal() +
+  labs(x = "", y = "Normalized Difference Vegetation Index (NDVI)", col = "Vegetation type",
+       title = "Seasonal cycles of vegetation productivity") 
+```
+
+## Conclusion
+
+This lab focuses on analyzing plant phenology near the Santa Clara River using Landsat imagery and study sites representing different vegetation communities. The workflow involves creating an NDVI function, computing NDVI for each scene, stacking them into a raster stack, and comparing NDVI changes across vegetation communities. The process is streamlined by generalizing the workflow into a function and efficiently handling multiple scenes. The study sites' NDVI values are extracted, tidied, and visualized to observe seasonal cycles of vegetation productivity.
+
+This last plot distinctly illustrates the variation in vegetation types, including forest, grasslands, and chaparral. The graph highlights distinct trends in plant behavior based on their phenological characteristics---winter deciduous, drought deciduous, and evergreen. According to the data, chaparral exhibits an evergreen pattern, maintaining leaves throughout the year. Grasslands follow a winter deciduous pattern, shedding leaves in winter and growing new ones in spring. Forest, on the other hand, demonstrates a drought deciduous behavior, losing leaves in the summer when water is limited.
