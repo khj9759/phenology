@@ -15,6 +15,7 @@ To investigate the phenology of these plant communities, we will analyze a time 
 ### Data
 The data for this project was obtained from the provided link, and it will be included in the .gitignore.
 
+```
 phenology
 │   README.md
 │   Rmd/Proj files    
@@ -28,5 +29,6 @@ phenology
     │   landsat_20190122.tif
     │   landsat_20190223.tif     
     │   landsat_20190412.tif  
-    │   landsat_20190701.tif  
+    │   landsat_20190701.tif
+```
 
