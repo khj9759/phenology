@@ -379,15 +379,34 @@ locations of study sites within each plant community.<br />
 </div>
 <div id="dataset" class="section level2">
 <h2>Dataset</h2>
-<p>Landsat Operational Land Imager (OLI sensor)<br />
-8 pre-processed scenes</p>
-<p>Study sites</p>
+<div id="landsat-operational-land-imager-oli-sensor" class="section level4">
+<h4>Landsat Operational Land Imager (OLI sensor)</h4>
+<p>8 pre-processed scenes</p>
+<ul>
+<li><p>Level 2 surface reflectance products</p></li>
+<li><p>erroneous values were set to NA</p></li>
+<li><p>scale factor set to 100</p></li>
+<li><p>bands 2-7</p></li>
+<li><p>dates in filenname</p></li>
+</ul>
+</div>
+<div id="study-sites" class="section level4">
+<h4>Study sites</h4>
 <p>Each identified by plant type, with the column named
 “study_site.”</p>
 </div>
 </div>
-<div id="workflow" class="section level1">
-<h1>Workflow</h1>
+<div id="highlights" class="section level2">
+<h2>Highlights</h2>
+<ul>
+<li>combining vector/raster data</li>
+<li>compute and summarize NDVI value</li>
+<li>map and plot algebra<br />
+</li>
+</ul>
+</div>
+<div id="workflow" class="section level2">
+<h2>Workflow</h2>
 <pre class="r"><code>library(terra)
 library(sf)
 library(dplyr)
@@ -411,10 +430,11 @@ by their sum.</p>
   (nir - red) / (nir + red)
 }</code></pre>
 </div>
+</div>
 <div id="sampling-one-of-the-scene" class="section level2">
 <h2>Sampling one of the scene</h2>
 <div id="computing-ndvi-for-a-single-scene" class="section level3">
-<h3>computing NDVI for a single scene</h3>
+<h3>Computing NDVI for a single scene</h3>
 <p>We have 8 scenes collected by the Landsat OLI sensor on 8 different
 days throughout the year. Let’s start by loading in the first scene
 collected on June 12, 2018</p>
@@ -433,7 +453,7 @@ landsat_20180612</code></pre>
 </div>
 </div>
 <div id="match-the-spectral-bands" class="section level2">
-<h2>match the spectral bands</h2>
+<h2>Match the spectral bands</h2>
 <pre class="r"><code>names(landsat_20180612) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
 
 landsat_20180612</code></pre>
@@ -447,7 +467,7 @@ landsat_20180612</code></pre>
 ## min values  :  0.00350,  0.8725,  1.087,  1.3180,  1.12825,  1.84050 
 ## max values  : 54.15375, 60.0855, 62.973, 70.6345, 68.01650, 92.92325</code></pre>
 <div id="take-nir-and-red-bands" class="section level3">
-<h3>take NIR and Red bands</h3>
+<h3>Take NIR and Red bands</h3>
 <p>Utilize the NDVI function and calculate this using the lapp()
 method.</p>
 <pre class="r"><code>ndvi_20180612 &lt;- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
@@ -463,52 +483,15 @@ ndvi_20180612</code></pre>
 ## min value   : -0.4089055 
 ## max value   :  0.9304582</code></pre>
 </div>
-<div id="computing-ndvi-for-all-scences" class="section level3">
-<h3>computing NDVI for all scences</h3>
+<div id="omputing-ndvi-for-all-scenes" class="section level3">
+<h3>omputing NDVI for all scenes</h3>
 <p>Now we want to repeat the same operations for all 8 scenes. Below is
-a possible solution, but it’s pretty clunky.</p>
-<div id="load-in-each-layer" class="section level4">
-<h4>load in each layer</h4>
-<pre class="r"><code>landsat_20180612 &lt;-rast(here(&quot;data&quot;, &quot;landsat_20180612.tif&quot;))
-landsat_20180815 &lt;- rast(here( &quot;data&quot;, &quot;landsat_20180815.tif&quot;))
-landsat_20181018 &lt;- rast(here(&quot;data&quot;, &quot;landsat_20181018.tif&quot;))
-landsat_20181103 &lt;- rast(here(&quot;data&quot;, &quot;landsat_20181103.tif&quot;))
-landsat_20190122 &lt;- rast(here(&quot;data&quot;,  &quot;landsat_20190122.tif&quot;))
-landsat_20190223 &lt;- rast(here(&quot;data&quot;, &quot;landsat_20190223.tif&quot;))
-landsat_20190412 &lt;- rast(here(&quot;data&quot;, &quot;landsat_20190412.tif&quot;))
-landsat_20190701 &lt;- rast(here(&quot;data&quot;, &quot;landsat_20190701.tif&quot;))</code></pre>
-</div>
-<div id="rename-each-layer" class="section level4">
-<h4>rename each layer</h4>
-<pre class="r"><code>names(landsat_20180612) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20180815) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20181018) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20181103) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20190122) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20190223) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20190412) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)
-names(landsat_20190701) &lt;- c(&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;NIR&quot;, &quot;SWIR1&quot;, &quot;SWIR2&quot;)</code></pre>
-</div>
-<div id="compute-ndvi-for-each-layer" class="section level4">
-<h4>compute NDVI for each layer</h4>
-<pre class="r"><code>ndvi_20180612 &lt;- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20180815 &lt;- lapp(landsat_20180815[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20181018 &lt;- lapp(landsat_20181018[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20181103 &lt;- lapp(landsat_20181103[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190122 &lt;- lapp(landsat_20190122[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190223 &lt;- lapp(landsat_20190223[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190412 &lt;- lapp(landsat_20190412[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190701 &lt;- lapp(landsat_20190701[[c(4, 3)]], fun = ndvi_fun)</code></pre>
-</div>
-</div>
-<div id="computing-ndvi-for-all-scenes" class="section level3">
-<h3>computing NDVI for all scenes</h3>
-<p>Outline our function by first specifying the operations we aim to
-perform, which involves creating a list of files/scenes. This list will
-enable our function to compute NDVI for each scene, requiring us to
-locate the relevant files in our data folder. Subsequently, we’ll update
-our function to operate seamlessly with the list of file names we
-generated.</p>
+a possible solution, but it’s pretty clunky. Outline our function by
+first specifying the operations we aim to perform, which involves
+creating a list of files/scenes. This list will enable our function to
+compute NDVI for each scene, requiring us to locate the relevant files
+in our data folder. Subsequently, we’ll update our function to operate
+seamlessly with the list of file names we generated.</p>
 <pre class="r"><code># bring data 
 files &lt;- list.files(here(&quot;data&quot;), pattern = &quot;*.tif&quot;, full.names = TRUE)
 

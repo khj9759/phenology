@@ -10,20 +10,33 @@ Plants use different strategies for growth and survival: riparian forests, grass
 
 To examine the phenology of these plant communities, we will utilize a time series of Landsat imagery along with polygons that identify the locations of study sites within each plant community.\
 
-## Dataset 
+## Dataset
 
-Landsat Operational Land Imager (OLI sensor)\
+#### Landsat Operational Land Imager (OLI sensor)
+
 8 pre-processed scenes
 
-Study sites
+-   Level 2 surface reflectance products
+
+-   erroneous values were set to NA
+
+-   scale factor set to 100
+
+-   bands 2-7
+
+-   dates in filenname
+
+#### Study sites
 
 Each identified by plant type, with the column named "study_site."
 
-# Workflow
+## Highlights
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, include = TRUE)
-```
+-   combining vector/raster data
+-   compute and summarize NDVI value
+-   map and plot algebra\
+
+## Workflow
 
 ```{r include=TRUE, message=FALSE}
 library(terra)
@@ -42,7 +55,7 @@ rm(list = ls())
 here::i_am("phenology.Rmd")
 ```
 
-### NDVI function for nir and red 
+### NDVI function for nir and red
 
 This index is derived by calculating the difference in reflectance between the near-infrared and red bands and then normalizing the result by their sum.
 
@@ -54,7 +67,7 @@ ndvi_fun = function(nir, red){
 
 ## Sampling one of the scene
 
-### computing NDVI for a single scene
+### Computing NDVI for a single scene
 
 We have 8 scenes collected by the Landsat OLI sensor on 8 different days throughout the year. Let's start by loading in the first scene collected on June 12, 2018
 
@@ -64,7 +77,7 @@ landsat_20180612 <-rast(here("data", "landsat_20180612.tif"))
 landsat_20180612
 ```
 
-## match the spectral bands
+## Match the spectral bands
 
 ```{r}
 names(landsat_20180612) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
@@ -72,9 +85,9 @@ names(landsat_20180612) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
 landsat_20180612
 ```
 
-### take NIR and Red bands 
+### Take NIR and Red bands
 
-Utilize the NDVI function and calculate this using the lapp() method.
+Utilize the NDVI function and calculate this using the `lapp()`method.
 
 ```{r}
 ndvi_20180612 <- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
@@ -82,52 +95,9 @@ ndvi_20180612 <- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
 ndvi_20180612
 ```
 
-### computing NDVI for all scences
+### omputing NDVI for all scenes
 
-Now we want to repeat the same operations for all 8 scenes. Below is a possible solution, but it's pretty clunky.
-
-#### load in each layer
-
-```{r }
-landsat_20180612 <-rast(here("data", "landsat_20180612.tif"))
-landsat_20180815 <- rast(here( "data", "landsat_20180815.tif"))
-landsat_20181018 <- rast(here("data", "landsat_20181018.tif"))
-landsat_20181103 <- rast(here("data", "landsat_20181103.tif"))
-landsat_20190122 <- rast(here("data",  "landsat_20190122.tif"))
-landsat_20190223 <- rast(here("data", "landsat_20190223.tif"))
-landsat_20190412 <- rast(here("data", "landsat_20190412.tif"))
-landsat_20190701 <- rast(here("data", "landsat_20190701.tif"))
-```
-
-#### rename each layer
-
-```{r include=TRUE}
-names(landsat_20180612) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20180815) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20181018) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20181103) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20190122) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20190223) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20190412) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-names(landsat_20190701) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-```
-
-#### compute NDVI for each layer
-
-```{r include=TRUE}
-ndvi_20180612 <- lapp(landsat_20180612[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20180815 <- lapp(landsat_20180815[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20181018 <- lapp(landsat_20181018[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20181103 <- lapp(landsat_20181103[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190122 <- lapp(landsat_20190122[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190223 <- lapp(landsat_20190223[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190412 <- lapp(landsat_20190412[[c(4, 3)]], fun = ndvi_fun)
-ndvi_20190701 <- lapp(landsat_20190701[[c(4, 3)]], fun = ndvi_fun)
-```
-
-### computing NDVI for all scenes 
-
-Outline our function by first specifying the operations we aim to perform, which involves creating a list of files/scenes. This list will enable our function to compute NDVI for each scene, requiring us to locate the relevant files in our data folder. Subsequently, we'll update our function to operate seamlessly with the list of file names we generated.
+Now we want to repeat the same operations for all 8 scenes. Below is a possible solution, but it's pretty clunky. Outline our function by first specifying the operations we aim to perform, which involves creating a list of files/scenes. This list will enable our function to compute NDVI for each scene, requiring us to locate the relevant files in our data folder. Subsequently, we'll update our function to operate seamlessly with the list of file names we generated.
 
 ```{r}
 # bring data 

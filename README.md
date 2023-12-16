@@ -6,14 +6,13 @@ Convey the significance of phenology in plant adaptation, highlighting the timin
 To investigate the phenology of these plant communities, we will analyze a time series of Landsat imagery coupled with polygons identifying the locations of study sites within each plant community.
 
 ### Highlights
-- Transform spectral reflectance into a measure of vegetation productivity known as NDVI.
-- Compute NDVI consistently throughout the year.
-- Summarize NDVI values within different vegetation communities.
-- Visualize alterations in NDVI within these vegetation communities.
+- combining vector/raster data\
+- compute and summarize NDVI value
+- map and plot algebra\
 
 
 ### Data
-The data for this project was obtained from the provided link, and it will be included in the .gitignore.
+The data for this project was obtained from the provided [link](https://drive.google.com/file/d/1e9ZwWoC6kmqy5r7WtDOkabYa02jMx_sd/view), and it will be included in the `.gitignore`.
 
 ```
 phenology
